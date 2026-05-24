@@ -87,4 +87,10 @@ app.use('/api/history', verifyTokenMiddleware, createProxyMiddleware({
   pathRewrite: { '^/api/history': '/history' },
 }));
 
+app.use('/api/notifications', verifyTokenMiddleware, createProxyMiddleware({
+  target: process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:4007',
+  changeOrigin: true,
+  pathRewrite: { '^/api/notifications': '/notifications' },
+}));
+
 app.listen(PORT, () => console.log(`[api-gateway] running on port ${PORT}`));
