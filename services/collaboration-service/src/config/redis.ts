@@ -4,15 +4,13 @@ export let redis: Redis;
 
 export async function connectRedis() {
   try {
-    redis = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: Number(process.env.REDIS_PORT) || 6379,
-      password: process.env.REDIS_PASSWORD,
-      retryStrategy: (times) => (times > 3 ? null : Math.min(times * 200, 1000)),
+    const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
+    redis = new Redis(redisUrl, {
+      maxRetriesPerRequest: 3,
+      enableReadyCheck: false,
       enableOfflineQueue: false,
-      lazyConnect: true,
     });
-    await redis.connect();
+    redis.on('error', (err) => console.warn('[collaboration-service] Redis error:', err.message));
     await redis.ping();
     console.log('[collaboration-service] Redis connected');
   } catch (err) {
