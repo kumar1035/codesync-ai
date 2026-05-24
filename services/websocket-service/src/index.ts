@@ -15,13 +15,14 @@ const httpServer = createServer(app);
 const PORT = process.env.PORT || 4003;
 
 // Redis pub/sub for horizontal scaling
-const pubClient = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: Number(process.env.REDIS_PORT) || 6379,
-  password: process.env.REDIS_PASSWORD,
-});
-const subClient = pubClient.duplicate();
-const redis = pubClient.duplicate();
+const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
+const pubClient = new Redis(redisUrl, { maxRetriesPerRequest: 3, enableReadyCheck: false });
+const subClient = new Redis(redisUrl, { maxRetriesPerRequest: 3, enableReadyCheck: false });
+const redis    = new Redis(redisUrl, { maxRetriesPerRequest: 3, enableReadyCheck: false });
+
+pubClient.on('error', (err) => console.warn('[websocket-service] Redis pubClient error:', err.message));
+subClient.on('error', (err) => console.warn('[websocket-service] Redis subClient error:', err.message));
+redis.on('error',     (err) => console.warn('[websocket-service] Redis error:', err.message));
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 10, ssl: process.env.DATABASE_URL?.includes('supabase.co') ? { rejectUnauthorized: false } : false });
 
@@ -187,7 +188,6 @@ app.get('/stats', async (_, res) => {
 });
 
 async function bootstrap() {
-  await pubClient.ping();
   try {
     await producer.connect();
     console.log('[websocket-service] Kafka producer connected');
