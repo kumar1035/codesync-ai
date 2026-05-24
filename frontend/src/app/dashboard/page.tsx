@@ -1,14 +1,17 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import { Code2, Plus, Users, LogOut, BarChart2, Settings, Globe, Lock, Copy, ArrowRight, Share2 } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { Code2, Plus, Users, LogOut, BarChart2, Settings, Globe, Lock, Copy, ArrowRight, Share2, LayoutDashboard, ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { Avatar } from '@/components/ui/Avatar';
 
 export default function DashboardPage() {
   const { user, clearAuth } = useAuthStore();
   const router = useRouter();
+  const pathname = usePathname();
   const qc = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -38,25 +41,75 @@ export default function DashboardPage() {
     onSuccess: (res) => { qc.invalidateQueries({ queryKey: ['rooms'] }); setShowJoinModal(false); setInviteCode(''); router.push(`/room/${res.data.data.room_id || res.data.data.id}`); },
   });
 
+  const navItems = [
+    { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+    { label: 'Analytics', icon: BarChart2, href: '/analytics' },
+    { label: 'Settings', icon: Settings, href: '/settings' },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-16 bg-card border-r border-border flex flex-col items-center py-4 gap-4 z-40">
-        <div className="bg-primary/10 rounded-lg p-2"><Code2 className="h-6 w-6 text-primary" /></div>
-        <div className="flex-1" />
-        <button onClick={() => router.push('/analytics')} className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary" title="Analytics">
-          <BarChart2 className="h-5 w-5" />
-        </button>
-        <button onClick={() => router.push('/settings')} className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary" title="Settings">
-          <Settings className="h-5 w-5" />
-        </button>
-        <button onClick={() => { clearAuth(); router.push('/'); }} className="p-2 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10" title="Logout">
-          <LogOut className="h-5 w-5" />
-        </button>
+      <div className="fixed left-0 top-0 h-full w-60 bg-card border-r border-border flex flex-col z-40">
+        {/* Logo */}
+        <div className="px-4 py-5 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 rounded-xl p-2.5 flex-shrink-0">
+              <Code2 className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="font-bold text-sm leading-tight">CodeSync AI</p>
+              <p className="text-[11px] text-muted-foreground">Collaborative Editor</p>
+            </div>
+          </div>
+        </div>
+
+        {/* User Card */}
+        <div className="px-3 py-3 border-b border-border">
+          <div className="flex items-center gap-3 px-2 py-2.5 rounded-xl bg-secondary/50 border border-border/50">
+            <Avatar seed={user?.username ?? 'user'} size={36} avatarStyle={(user?.avatar_style as any) ?? 'avataaars'} className="ring-2 ring-primary/20" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold truncate">{user?.username}</p>
+              <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Nav */}
+        <div className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">Navigation</p>
+          {navItems.map(({ label, icon: Icon, href }) => (
+            <button key={href} onClick={() => router.push(href)}
+              className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                pathname === href
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              }`}>
+              <Icon className="h-4 w-4 flex-shrink-0" />
+              {label}
+              {pathname === href && <ChevronRight className="h-3.5 w-3.5 ml-auto" />}
+            </button>
+          ))}
+
+          <div className="pt-3">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">Account</p>
+            <NotificationBell placement="left" showLabel />
+          </div>
+        </div>
+
+        {/* Logout */}
+        <div className="px-3 py-3 border-t border-border">
+          <button onClick={() => { clearAuth(); router.push('/'); }}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+            <LogOut className="h-4 w-4 flex-shrink-0" />
+            Sign Out
+          </button>
+        </div>
       </div>
 
       {/* Main */}
-      <div className="pl-16 p-8 max-w-6xl mx-auto">
+      <div className="pl-60 min-h-screen">
+        <div className="max-w-5xl mx-auto p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold">Welcome back, {user?.username}</h1>
@@ -119,6 +172,7 @@ export default function DashboardPage() {
               </button>
             </div>
           )}
+        </div>
         </div>
       </div>
 
