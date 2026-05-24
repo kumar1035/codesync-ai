@@ -11,11 +11,9 @@ import { verifyTokenMiddleware } from './middleware/auth.middleware';
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: Number(process.env.REDIS_PORT) || 6379,
-  password: process.env.REDIS_PASSWORD,
-});
+const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
+const redis = new Redis(redisUrl, { maxRetriesPerRequest: 3, enableReadyCheck: false });
+redis.on('error', (err) => console.warn('[api-gateway] Redis error:', err.message));
 
 const corsOrigins = (process.env.CORS_ORIGIN || '*').split(',').map(s => s.trim());
 app.use(helmet());
