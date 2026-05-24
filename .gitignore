@@ -7,5 +7,6 @@ build/
 coverage/
 .next/
 *.log
+.claude/
 .DS_Store
 Thumbs.db
