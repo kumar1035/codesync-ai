@@ -7,7 +7,10 @@ import {
   ChevronLeft, Plus, Terminal, X, Wifi, WifiOff, Loader2, Trash2
 } from 'lucide-react';
 import { CollaborativeEditor } from '@/components/editor/CollaborativeEditor';
+import { Avatar } from '@/components/ui/Avatar';
 import { AIPanel } from '@/components/ai/AIPanel';
+import { HistoryPanel } from '@/components/history/HistoryPanel';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { api } from '@/lib/api';
 import { useEditorStore } from '@/store/editor.store';
 import { useSocket } from '@/hooks/useSocket';
@@ -28,6 +31,7 @@ export default function RoomPage() {
   const [showNewFile, setShowNewFile] = useState(false);
   const [newFileName, setNewFileName] = useState('');
   const [newFileLang, setNewFileLang] = useState('javascript');
+  const [showHistory, setShowHistory] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [executionOutput, setExecutionOutput] = useState('');
 
@@ -111,16 +115,19 @@ export default function RoomPage() {
           </div>
 
           {/* Collaborator avatars */}
-          <div className="flex -space-x-1.5">
-            {collaborators.slice(0, 5).map((c, i) => (
-              <div key={c.userId} title={c.username}
-                className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold border-2 border-background"
-                style={{ backgroundColor: c.color }}>
-                {c.username[0].toUpperCase()}
+          <div className="flex -space-x-2">
+            {collaborators.slice(0, 5).map((c) => (
+              <div key={c.userId} title={c.username}>
+                <Avatar
+                  seed={c.username}
+                  size={26}
+                  borderColor={c.color}
+                  className="border-background"
+                />
               </div>
             ))}
             {collaborators.length > 5 && (
-              <div className="h-6 w-6 rounded-full bg-secondary flex items-center justify-center text-xs border-2 border-background">
+              <div className="h-[26px] w-[26px] rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold border-2 border-background z-10">
                 +{collaborators.length - 5}
               </div>
             )}
@@ -139,6 +146,11 @@ export default function RoomPage() {
             className={`p-1.5 rounded-md transition-colors ${showChat ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`}>
             <MessageSquare className="h-4 w-4" />
           </button>
+          <button onClick={() => setShowHistory(!showHistory)} title="File History"
+            className={`p-1.5 rounded-md transition-colors ${showHistory ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`}>
+            <History className="h-4 w-4" />
+          </button>
+          <NotificationBell />
         </div>
       </header>
 
@@ -219,6 +231,15 @@ export default function RoomPage() {
           <div className="w-80 flex-shrink-0">
             <AIPanel onClose={() => setShowAI(false)} />
           </div>
+        )}
+
+        {/* History Panel */}
+        {showHistory && (
+          <HistoryPanel
+            fileId={activeFile?.id ?? null}
+            fileName={activeFile?.filename ?? 'No file selected'}
+            onClose={() => setShowHistory(false)}
+          />
         )}
 
         {/* Chat Panel */}
