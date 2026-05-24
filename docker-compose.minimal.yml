@@ -1,0 +1,174 @@
+version: '3.9'
+
+# Minimal stack for local development.
+# Runs: Redis + API Gateway + Auth Service + Collaboration Service + WebSocket Service
+# Database: Supabase (cloud) - no local postgres needed
+# Start: docker-compose -f docker-compose.minimal.yml up --build
+
+networks:
+  codesync-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+
+x-db-env: &db-env
+  DATABASE_URL: postgresql://postgres.ldthtzpdbyciewdpmjhh:Anujkumar%401035@aws-1-ap-south-1.pooler.supabase.com:5432/postgres
+  NODE_TLS_REJECT_UNAUTHORIZED: "0"
+
+x-redis-env: &redis-env
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  REDIS_PASSWORD: codesync_redis_secret
+
+x-jwt-env: &jwt-env
+  JWT_SECRET: bfbd6fa67849c43831e9c33c4c025f582e69392715bd7af15eba09273e692dab
+  JWT_REFRESH_SECRET: c7e4e2a1c35533290f7b89ab4587939c90b5693c1b7a0af36d59ac429842ed85
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: codesync-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass codesync_redis_secret
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - codesync-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "codesync_redis_secret", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: codesync-api-gateway
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      <<: [*redis-env, *jwt-env]
+      NODE_ENV: development
+      PORT: 4000
+      AUTH_SERVICE_URL: http://auth-service:4001
+      COLLABORATION_SERVICE_URL: http://collaboration-service:4002
+      AI_SERVICE_URL: http://ai-service:4004
+      EXECUTION_SERVICE_URL: http://execution-service:4005
+      ANALYTICS_SERVICE_URL: http://analytics-service:4006
+      HISTORY_SERVICE_URL: http://history-service:4008
+      CORS_ORIGIN: http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3002
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - codesync-network
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: codesync-auth-service
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      <<: [*db-env, *redis-env, *jwt-env]
+      NODE_ENV: development
+      PORT: 4001
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      KAFKA_BROKER: ""
+      CORS_ORIGIN: http://localhost:3000,http://localhost:3001,http://localhost:3002
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - codesync-network
+
+  collaboration-service:
+    build:
+      context: ./services/collaboration-service
+      dockerfile: Dockerfile
+    container_name: codesync-collaboration-service
+    restart: unless-stopped
+    ports:
+      - "4002:4002"
+    environment:
+      <<: [*db-env, *redis-env, *jwt-env]
+      NODE_ENV: development
+      PORT: 4002
+      KAFKA_BROKER: ""
+      CORS_ORIGIN: http://localhost:3000,http://localhost:3001,http://localhost:3002
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - codesync-network
+
+  websocket-service:
+    build:
+      context: ./services/websocket-service
+      dockerfile: Dockerfile
+    container_name: codesync-websocket-service
+    restart: unless-stopped
+    ports:
+      - "4003:4003"
+    environment:
+      <<: [*db-env, *redis-env, *jwt-env]
+      NODE_ENV: development
+      PORT: 4003
+      KAFKA_BROKER: ""
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - codesync-network
+
+  ai-service:
+    build:
+      context: ./services/ai-service
+      dockerfile: Dockerfile
+    container_name: codesync-ai-service
+    restart: unless-stopped
+    ports:
+      - "4004:4004"
+    environment:
+      <<: [*db-env, *redis-env, *jwt-env]
+      NODE_ENV: development
+      PORT: 4004
+      KAFKA_BROKER: ""
+      GEMINI_API_KEY: AIzaSyD78uYeF9ggV82zQvd770PrQI5NvDTpznU
+      AI_PROVIDER: gemini
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - codesync-network
+
+  execution-service:
+    build:
+      context: ./services/execution-service
+      dockerfile: Dockerfile
+    container_name: codesync-execution-service
+    restart: unless-stopped
+    ports:
+      - "4005:4005"
+    environment:
+      <<: [*db-env, *jwt-env]
+      NODE_ENV: development
+      PORT: 4005
+      KAFKA_BROKER: ""
+      EXECUTION_TIMEOUT: "30000"
+      EXECUTION_MEMORY_LIMIT: "128m"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - codesync-network

@@ -1,0 +1,14 @@
+{
+  "name": "codesync-ai",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "docker-compose up --build",
+    "frontend": "npm install --legacy-peer-deps --prefix frontend && npm run dev --prefix frontend",
+    "install:all": "node scripts/install-all.js"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.15",
+    "concurrently": "^8.2.2"
+  }
+}

@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 4%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 7%;
+    --card-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 4%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
+    --radius: 0.5rem;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground font-sans antialiased; }
+  code, pre { font-family: var(--font-mono); }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: hsl(var(--muted)); }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+
+/* Cursor colors for collaborators */
+.cursor-user-0 { border-color: #3b82f6; background: #3b82f620; }
+.cursor-user-1 { border-color: #10b981; background: #10b98120; }
+.cursor-user-2 { border-color: #f59e0b; background: #f59e0b20; }
+.cursor-user-3 { border-color: #ef4444; background: #ef444420; }
+.cursor-user-4 { border-color: #8b5cf6; background: #8b5cf620; }
+
+/* Loading animation */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px hsl(var(--primary)/0.5); }
+  50% { box-shadow: 0 0 20px hsl(var(--primary)/0.8); }
+}
+.pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
