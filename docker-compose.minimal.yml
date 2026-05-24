@@ -60,6 +60,7 @@ services:
       AI_SERVICE_URL: http://ai-service:4004
       EXECUTION_SERVICE_URL: http://execution-service:4005
       ANALYTICS_SERVICE_URL: http://analytics-service:4006
+      NOTIFICATION_SERVICE_URL: http://notification-service:4007
       HISTORY_SERVICE_URL: http://history-service:4008
       CORS_ORIGIN: http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3002
     depends_on:
@@ -167,6 +168,63 @@ services:
       EXECUTION_MEMORY_LIMIT: "128m"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - codesync-network
+
+  analytics-service:
+    build:
+      context: ./services/analytics-service
+      dockerfile: Dockerfile
+    container_name: codesync-analytics-service
+    restart: unless-stopped
+    ports:
+      - "4006:4006"
+    environment:
+      <<: [*db-env, *redis-env, *jwt-env]
+      NODE_ENV: development
+      PORT: 4006
+      KAFKA_BROKER: ""
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - codesync-network
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: codesync-notification-service
+    restart: unless-stopped
+    ports:
+      - "4007:4007"
+    environment:
+      <<: [*db-env, *redis-env, *jwt-env]
+      NODE_ENV: development
+      PORT: 4007
+      KAFKA_BROKER: ""
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - codesync-network
+
+  history-service:
+    build:
+      context: ./services/history-service
+      dockerfile: Dockerfile
+    container_name: codesync-history-service
+    restart: unless-stopped
+    ports:
+      - "4008:4008"
+    environment:
+      <<: [*db-env, *redis-env, *jwt-env]
+      NODE_ENV: development
+      PORT: 4008
+      KAFKA_BROKER: ""
     depends_on:
       redis:
         condition: service_healthy
