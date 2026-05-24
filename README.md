@@ -357,17 +357,6 @@ Input Validation  Zod schemas on all request bodies
 CORS              Configured per environment (strict in production)
 ```
 
----
-
-
-
----
-
-
-
-
-
-## License
 
 
 <div align="center">
