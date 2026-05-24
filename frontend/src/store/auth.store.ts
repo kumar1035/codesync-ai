@@ -7,6 +7,7 @@ interface User {
   username: string;
   email: string;
   avatar_url?: string;
+  avatar_style?: string;
 }
 
 interface AuthState {
@@ -14,6 +15,7 @@ interface AuthState {
   accessToken: string | null;
   isAuthenticated: boolean;
   setAuth: (user: User, accessToken: string, refreshToken: string) => void;
+  updateUser: (updates: Partial<User>) => void;
   clearAuth: () => void;
 }
 
@@ -28,6 +30,9 @@ export const useAuthStore = create<AuthState>()(
         Cookies.set('refreshToken', refreshToken, { expires: 7 });
         set({ user, accessToken, isAuthenticated: true });
       },
+      updateUser: (updates) => set(state => ({
+        user: state.user ? { ...state.user, ...updates } : null,
+      })),
       clearAuth: () => {
         Cookies.remove('accessToken');
         Cookies.remove('refreshToken');
