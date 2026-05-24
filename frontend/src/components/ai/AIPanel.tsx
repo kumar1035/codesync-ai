@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { useEditorStore } from '@/store/editor.store';
+import { useAuthStore } from '@/store/auth.store';
+import { Avatar } from '@/components/ui/Avatar';
 
 type AIMode = 'chat' | 'generate' | 'complete' | 'review' | 'debug' | 'explain' | 'refactor' | 'docs';
 
@@ -89,13 +91,14 @@ function parseContent(text: string): Array<{ type: 'text' | 'code'; content: str
 }
 
 // ── Single message bubble ─────────────────────────────────────────────────────
-function MessageBubble({ msg, isStreaming }: { msg: Message; isStreaming?: boolean }) {
+function MessageBubble({ msg, isStreaming, username, avatarStyle }: { msg: Message; isStreaming?: boolean; username?: string; avatarStyle?: string }) {
   if (msg.role === 'user') {
     return (
-      <div className="flex justify-end">
-        <div className="max-w-[85%] bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-2.5">
+      <div className="flex items-end justify-end gap-2">
+        <div className="max-w-[82%] bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-2.5">
           <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
         </div>
+        <Avatar seed={username ?? 'user'} size={24} avatarStyle={(avatarStyle as any) ?? 'avataaars'} className="mb-0.5 flex-shrink-0 ring-1 ring-primary/30" />
       </div>
     );
   }
@@ -130,6 +133,8 @@ export function AIPanel({ onClose }: { onClose?: () => void }) {
   const abortRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { fileContent, language, currentRoomId } = useEditorStore();
+  const { user } = useAuthStore();
+  const userAvatarStyle = (user?.avatar_style as any) ?? 'avataaars';
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -280,6 +285,8 @@ export function AIPanel({ onClose }: { onClose?: () => void }) {
           <MessageBubble
             key={i}
             msg={msg}
+            username={user?.username}
+            avatarStyle={userAvatarStyle}
             isStreaming={streaming && i === messages.length - 1 && msg.role === 'assistant'}
           />
         ))}
